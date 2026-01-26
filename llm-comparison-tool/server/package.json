@@ -1,0 +1,25 @@
+{
+  "name": "llm-comparison-server",
+  "version": "1.0.0",
+  "description": "Backend server for LLM comparison tool",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["llm", "ai", "comparison"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "@google/generative-ai": "^0.2.1",
+    "openai": "^4.24.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
