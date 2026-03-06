@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Comparison Tool - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        button, input, textarea, select {
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: #1a1d2e;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .app {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #1a1d2e;
+        }
+
+        /* Header */
+        .app-header {
+            background: #22263a;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #2d3348;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .menu-button {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-button:hover {
+            background: #2d3348;
+            color: #fff;
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+        }
+
+        .header-title p {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin: 0;
+        }
+
+        .github-link {
+            background: transparent;
+            border: 1px solid #2d3348;
+            color: #d1d5db;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .github-link:hover {
+            background: #2d3348;
+            border-color: #3d4259;
+            color: #fff;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            min-height: 0;
+            padding: 1.5rem;
+            overflow: hidden;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            max-width: 1600px;
+            height: 100%;
+            margin: 0 auto;
+        }
+
+        .comparison-grid.carousel {
+            grid-template-columns: 1fr;
+            max-width: 1400px;
+            overflow: hidden;
+        }
+
+        /* Carousel Navigation */
+        .carousel-wrapper {
+            display: flex;
+            align-items: stretch;
+            gap: 1rem;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .carousel-card-container {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .carousel-card-container .model-card {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .carousel-indicators {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.875rem 0 0.25rem;
+        }
+
+        .carousel-dot {
+            width: 0.625rem;
+            height: 0.625rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.2s;
+        }
+
+        .carousel-dot.active {
+            background: #d97706;
+            width: 1.5rem;
+            border-radius: 0.3125rem;
+        }
+
+        .carousel-dot:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .carousel-nav {
+            background: rgba(34, 38, 58, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e5e7eb;
+            width: 3rem;
+            height: 3rem;
+            min-width: 3rem;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            align-self: center;
+            flex-shrink: 0;
+        }
+
+        .carousel-nav:hover {
+            background: rgba(217, 119, 6, 0.85);
+            border-color: rgba(251, 191, 36, 0.4);
+            color: #fff;
+            box-shadow: 0 8px 32px rgba(217, 119, 6, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: scale(1.1);
+        }
+
+        .carousel-nav:active {
+            transform: scale(0.95);
+        }
+
+        /* Model Card */
+        .model-card {
+            background: linear-gradient(145deg, #e08312 0%, #f59e0b 45%, #d97706 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255,255,255,0.08) inset;
+            position: relative;
+        }
+
+        .model-selector-header {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .model-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .model-header-row {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .context-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: rgba(120, 53, 15, 0.5);
+            border: 1px solid rgba(217, 119, 6, 0.3);
+            border-radius: 0.625rem;
+            padding: 0.3rem 0.625rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .context-badge-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #d97706;
+        }
+
+        .context-badge-value {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fef3c7;
+        }
+
+        .model-button {
+            background: #22263a;
+            border: 1px solid #2d3348;
+            color: #d1d5db;
+            padding: 0.625rem 1rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            width: fit-content;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .model-button:hover {
+            background: #2d3348;
+            border-color: #3d4259;
+            color: #fff;
+        }
+
+        .dropdown-arrow {
+            color: #6b7280;
+            margin-left: 0.25rem;
+        }
+
+        .model-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.375rem;
+            background: #16192b;
+            backdrop-filter: blur(16px);
+            border: 1px solid #2d3348;
+            border-radius: 0.75rem;
+            padding: 0.375rem;
+            min-width: 220px;
+            z-index: 100;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+
+        .model-dropdown.show {
+            display: block;
+        }
+
+        .model-dropdown-group-label {
+            padding: 0.5rem 0.75rem 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #4b5280;
+            user-select: none;
+        }
+
+        .model-dropdown-group + .model-dropdown-group {
+            margin-top: 0.25rem;
+            border-top: 1px solid #22263a;
+            padding-top: 0.25rem;
+        }
+
+        .model-dropdown-item {
+            background: transparent;
+            border: none;
+            color: #d1d5db;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            width: 100%;
+            text-align: left;
+            font-size: 0.8125rem;
+            transition: all 0.15s;
+        }
+
+        .model-dropdown-item:hover {
+            background: #22263a;
+            color: #fff;
+        }
+
+        .model-dropdown-item.active {
+            background: rgba(217, 119, 6, 0.2);
+            color: #fbbf24;
+        }
+
+        .dropdown-item-context {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #6b7280;
+            background: rgba(255,255,255,0.06);
+            border-radius: 0.375rem;
+            padding: 0.125rem 0.375rem;
+            margin-left: auto;
+        }
+
+        .model-dropdown-item:hover .dropdown-item-context,
+        .model-dropdown-item.active .dropdown-item-context {
+            color: #d97706;
+            background: rgba(217, 119, 6, 0.15);
+        }
+
+        .model-card-content {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .response-content {
+            flex: 1;
+            min-height: 0;
+            background: rgba(8, 11, 26, 0.62);
+            backdrop-filter: blur(12px);
+            border-radius: 0.75rem;
+            padding: 1.5rem 0.625rem 1.5rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+            animation: fadeIn 0.4s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .response-text {
+            color: #f1f5f9;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 0.75rem;
+        }
+
+        .copy-button {
+            background: rgba(34, 38, 58, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #9ca3af;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .copy-button:hover {
+            background: rgba(34, 38, 58, 1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .copy-button.copied {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #4ade80;
+        }
+
+        .copy-button svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .response-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: rgba(8, 11, 26, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.75rem;
+        }
+
+        .stat-label {
+            color: #9dafc7;
+            font-weight: 500;
+            whitespace: nowrap;
+        }
+
+        .stat-value {
+            color: #ffffff;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 3px solid rgba(254, 243, 199, 0.3);
+            border-top-color: #fef3c7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #fef3c7;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .loading-subtext {
+            color: #fbbf24;
+            font-size: 0.875rem;
+        }
+
+        .placeholder-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .placeholder-icon {
+            width: 4rem;
+            height: 4rem;
+            background: rgba(8, 11, 26, 0.45);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 2rem;
+        }
+
+        .placeholder-title {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .placeholder-text {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.875rem;
+            max-width: 250px;
+        }
+
+        /* Footer */
+        .app-footer {
+            background: transparent;
+            padding: 1rem 1.5rem 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        /* Panel Controls */
+        .panel-controls-island {
+            background: #22263a;
+            border: 1px solid #2d3348;
+            border-radius: 1.25rem;
+            padding: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: #d1d5db;
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 0.625rem;
+            cursor: pointer;
+            font-size: 1.25rem;
+            font-weight: 400;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: #2d3348;
+            color: #fff;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .input-island {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #22263a;
+            border: 1px solid #2d3348;
+            border-radius: 1.5rem;
+            padding: 0.875rem 1.25rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.2s;
+        }
+
+        .input-island:focus-within {
+            border-color: #3d4259;
+        }
+
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.5;
+            max-height: 10rem;
+            overflow-y: auto;
+            padding: 0;
+            scrollbar-width: thin;
+            scrollbar-color: #3d4460 transparent;
+        }
+
+        .message-input::placeholder {
+            color: #6b7280;
+        }
+
+        .send-button {
+            background: #d97706;
+            color: #fff;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.625rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: scale(1.05);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .view-controls-island {
+            background: #22263a;
+            border: 1px solid #2d3348;
+            border-radius: 1.25rem;
+            padding: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.625rem;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .view-btn:hover {
+            background: #2d3348;
+            color: #d1d5db;
+        }
+
+        .view-btn.active {
+            background: #d97706;
+            color: #fff;
+        }
+
+        .demo-banner {
+            background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+            color: #fff;
+            padding: 0.75rem 2rem;
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-banner a {
+            color: #fff;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .demo-banner a:hover {
+            color: #fef3c7;
+        }
+
+        /* Sidebar */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 110;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 18rem;
+            background: #16192b;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            z-index: 120;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-close {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-close:hover {
+            background: #22263a;
+            color: #fff;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #22263a;
+        }
+
+        .sidebar-header h2 {
+            color: #fff;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .sidebar-header p {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin: 0.25rem 0 0 0;
+        }
+
+        .sidebar-tabs {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            border-bottom: 1px solid #22263a;
+        }
+
+        .sidebar-tab {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .sidebar-tab:hover {
+            background: rgba(34, 38, 58, 0.5);
+            color: #fff;
+        }
+
+        .sidebar-tab.active {
+            background: #22263a;
+            color: #fff;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: #3d4460 transparent;
+        }
+
+        .settings-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .settings-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .settings-group h3 {
+            color: #d1d5db;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #22263a;
+            border-radius: 0.5rem;
+            border: 1px solid #2d3348;
+        }
+
+        .setting-label {
+            color: #e5e7eb;
+            font-size: 0.875rem;
+        }
+
+        .setting-description {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 2.5rem;
+            height: 1.25rem;
+            background: #374151;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: #d97706;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 0.125rem;
+            left: 0.125rem;
+            width: 1rem;
+            height: 1rem;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(1.25rem);
+        }
+
+        .demo-notice {
+            background: rgba(217, 119, 6, 0.1);
+            border: 1px solid rgba(217, 119, 6, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: #fbbf24;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .demo-notice strong {
+            color: #fef3c7;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid:not(.carousel) {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                width: 85vw;
+                max-width: 18rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="demo-banner">
+            📢 This is a static demo. For the full application with live API calls, visit 
+            <a href="https://github.com/OscarB11/LLM-Hub-V2-beta" target="_blank">GitHub Repository</a>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+        <div class="sidebar" id="sidebar">
+            <button class="sidebar-close" onclick="closeSidebar()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            
+            <div class="sidebar-header">
+                <h2>LLM-Hub-V2-Beta</h2>
+                <p>AI Model Comparison Tool</p>
+            </div>
+
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" onclick="switchTab('settings')" id="settingsTab">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m5.196-13.196l-4.242 4.242m0 5.908l4.242 4.242M1 12h6m6 0h6m-13.196 5.196l4.242-4.242m5.908 0l4.242 4.242"/>
+                    </svg>
+                    Settings
+                </button>
+                <button class="sidebar-tab" onclick="switchTab('about')" id="aboutTab">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    About
+                </button>
+            </div>
+
+            <div class="sidebar-content" id="sidebarContent">
+                <!-- Content will be injected by JavaScript -->
+            </div>
+        </div>
+
+        <header class="app-header">
+            <div class="header-left">
+                <button class="menu-button" onclick="toggleSidebar()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <div class="header-title">
+                    <h1>AI Model Comparison</h1>
+                    <p>Compare responses across different LLMs</p>
+                </div>
+            </div>
+            <a href="https://github.com/OscarB11/LLM-Hub-V2-beta" target="_blank" class="github-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                View on GitHub
+            </a>
+        </header>
+
+        <main class="main-content">
+            <div id="comparisonContainer" class="comparison-grid"></div>
+        </main>
+
+        <footer class="app-footer">
+            <div class="panel-controls-island">
+                <button class="control-btn" id="removeBtn" onclick="removePanel()" disabled title="Remove panel">−</button>
+                <button class="control-btn" id="addBtn" onclick="addPanel()" title="Add panel">+</button>
+            </div>
+            <div class="input-island">
+                <textarea class="message-input" id="promptInput" placeholder="Type your message here" rows="1" readonly></textarea>
+                <button class="send-button" id="sendBtn" onclick="handleSend()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="view-controls-island">
+                <button class="view-btn" id="carouselBtn" onclick="switchView('carousel')">Carousel View</button>
+                <button class="view-btn active" id="gridBtn" onclick="switchView('grid')">Grid View</button>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let currentTab = 'settings';
+        let sidebarSettings = {
+            darkMode: true,
+            showResponseTime: true,
+            debugLogging: false
+        };
+        let isLoading = false;
+        let hasResponses = false;
+
+        const models = [
+            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI', context: '16K' },
+            { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', context: '8K' },
+            { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', context: '128K' },
+            { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google', context: '1M' },
+            { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', provider: 'Google', context: '1M' },
+            { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite Preview', provider: 'Google', context: '1M' },
+            { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', provider: 'Google', context: '1M' }
+        ];
+
+        const demoResponses = {
+            'gpt-3.5-turbo': {
+                text: "Sure! Here's a comprehensive comparison of various sorting algorithms:\n\n1. **Bubble Sort**\n   - Time Complexity: O(n²)\n   - Space Complexity: O(1)\n   - Best for: Small datasets or nearly sorted data\n\n2. **Quick Sort**\n   - Time Complexity: O(n log n) average, O(n²) worst\n   - Space Complexity: O(log n)\n   - Best for: General purpose sorting\n\n3. **Merge Sort**\n   - Time Complexity: O(n log n)\n   - Space Complexity: O(n)\n   - Best for: When stable sorting is needed\n\n4. **Heap Sort**\n   - Time Complexity: O(n log n)\n   - Space Complexity: O(1)\n   - Best for: When memory is limited",
+                tokens: 1247,
+                time: 1.2
+            },
+            'gpt-4': {
+                text: "I'll provide a detailed analysis of sorting algorithms:\n\n**Comparison-Based Sorting:**\n\n1. Bubble Sort\n   - Simple but inefficient for large datasets\n   - Time: O(n²), Space: O(1)\n   - Adaptive: performs better on nearly sorted data\n\n2. Quick Sort\n   - Most widely used in practice\n   - Average: O(n log n), Worst: O(n²)\n   - Not stable but very fast\n\n3. Merge Sort\n   - Guaranteed O(n log n) performance\n   - Stable algorithm\n   - Requires O(n) extra space\n\n**Non-Comparison Based:**\n\n4. Counting Sort\n   - Linear time: O(n + k)\n   - Best for small integer ranges\n\n5. Radix Sort\n   - Time: O(d × (n + k))\n   - Excellent for fixed-length integers\n\n**When to use each:**\n- Small datasets (< 50): Insertion sort\n- General purpose: Quick sort\n- Need stability: Merge sort\n- Integer data: Radix/Counting sort",
+                tokens: 2156,
+                time: 2.8
+            },
+            'gpt-4-turbo': {
+                text: "Let me break down sorting algorithms comprehensively:\n\n**Elementary Algorithms (O(n²)):**\n\n1. **Bubble Sort**\n   - Repeatedly swaps adjacent elements\n   - Time: O(n²), Space: O(1)\n   - Stable, but inefficient\n   - Use case: Educational purposes only\n\n2. **Insertion Sort**\n   - Builds sorted array one item at a time\n   - Time: O(n²), Space: O(1)\n   - Excellent for small arrays (< 10 elements)\n   - Used in hybrid algorithms like Timsort\n\n**Efficient Algorithms (O(n log n)):**\n\n3. **Quick Sort**\n   - Divide-and-conquer approach\n   - Average: O(n log n), Worst: O(n²)\n   - Space: O(log n) for recursion stack\n   - In-place, not stable\n   - Most practical for general use\n\n4. **Merge Sort**\n   - Also divide-and-conquer\n   - Time: O(n log n) guaranteed\n   - Space: O(n)\n   - Stable, predictable performance\n   - Used in external sorting\n\n5. **Heap Sort**\n   - Uses binary heap data structure\n   - Time: O(n log n), Space: O(1)\n   - In-place, not stable\n   - Good for memory-constrained environments\n\n**Linear Time Algorithms:**\n\n6. **Counting Sort**\n   - Time: O(n + k), Space: O(k)\n   - Only for small integer ranges\n   - Stable\n\n7. **Radix Sort**\n   - Time: O(d × (n + k))\n   - For fixed-length keys\n   - Very fast for specific use cases\n\n**Practical Recommendations:**\n- Python's Timsort (hybrid of merge + insertion)\n- JavaScript's V8 engine uses Timsort\n- C++ std::sort uses introsort (quick + heap + insertion)\n\nThe choice depends on data characteristics, stability requirements, and available memory.",
+                tokens: 3421,
+                time: 3.1
+            },
+            'gemini-2.5-flash': {
+                text: "I'll provide a comprehensive overview of sorting algorithms with their characteristics:\n\n**Classification by Time Complexity:**\n\nO(n²) - Quadratic Time:\n• Bubble Sort: Simple, stable, adaptive\n• Selection Sort: Unstable, minimal swaps\n• Insertion Sort: Stable, efficient for small/nearly sorted data\n\nO(n log n) - Linearithmic Time:\n• Merge Sort: Stable, consistent performance, requires extra space\n• Quick Sort: Fast average case, in-place, unstable\n• Heap Sort: In-place, consistent, unstable\n\nO(n) - Linear Time (special cases):\n• Counting Sort: Integer sort for limited range\n• Radix Sort: Processes digits/characters\n• Bucket Sort: Distributes into buckets\n\n**Key Properties:**\n\n1. Stability: Preserves relative order of equal elements\n   - Stable: Merge, Insertion, Bubble\n   - Unstable: Quick, Heap, Selection\n\n2. In-place: Uses O(1) extra space\n   - Yes: Quick, Heap, Insertion, Bubble\n   - No: Merge (O(n))\n\n3. Adaptive: Faster on nearly sorted data\n   - Yes: Insertion, Bubble\n   - No: Selection, Heap\n\n**Real-World Usage:**\n- Java: Dual-Pivot Quicksort (primitives), Timsort (objects)\n- Python: Timsort (hybrid)\n- JavaScript: Varies by engine (Timsort, Quicksort)\n- C++: Introsort (Quick + Heap + Insertion)\n\n**Selection Guide:**\n- Small data (≤50): Insertion Sort\n- General purpose: Quicksort or Timsort\n- Need stability: Merge Sort or Timsort\n- Limited memory: Heap Sort\n- Integer data with small range: Counting/Radix Sort\n- External sorting: Merge Sort\n\nModern languages use hybrid approaches combining multiple algorithms for optimal performance across different scenarios.",
+                tokens: 2876,
+                time: 1.8
+            },
+            'gemini-3.1-pro-preview': {
+                text: "Let me provide an in-depth analysis of sorting algorithms:\n\n**I. Comparison-Based Sorting Algorithms**\n\nThese algorithms determine order by comparing elements:\n\n1. **Bubble Sort**\n   - Mechanism: Repeatedly swaps adjacent out-of-order pairs\n   - Time Complexity: Best O(n), Average/Worst O(n²)\n   - Space Complexity: O(1)\n   - Stability: Stable\n   - Advantages: Simple, detects sorted arrays quickly\n   - Disadvantages: Very slow for large datasets\n   - Use Cases: Teaching, tiny datasets\n\n2. **Selection Sort**\n   - Mechanism: Finds minimum element, places it at start, repeat\n   - Time Complexity: O(n²) always\n   - Space Complexity: O(1)\n   - Stability: Unstable (can be made stable)\n   - Advantages: Minimal swaps (n-1)\n   - Disadvantages: Always O(n²), even on sorted data\n   - Use Cases: Small datasets where swaps are expensive\n\n3. **Insertion Sort**\n   - Mechanism: Builds sorted array by inserting elements one at a time\n   - Time Complexity: Best O(n), Average/Worst O(n²)\n   - Space Complexity: O(1)\n   - Stability: Stable\n   - Advantages: Efficient for small/nearly sorted data, online algorithm\n   - Disadvantages: Slow for large random datasets\n   - Use Cases: Small arrays, nearly sorted data, hybrid algorithms\n\n4. **Merge Sort**\n   - Mechanism: Divide-and-conquer, recursively split and merge\n   - Time Complexity: O(n log n) always\n   - Space Complexity: O(n)\n   - Stability: Stable\n   - Advantages: Guaranteed O(n log n), stable, parallelizable\n   - Disadvantages: Requires extra space\n   - Use Cases: Linked lists, external sorting, when stability needed\n\n5. **Quick Sort**\n   - Mechanism: Partition around pivot, recursively sort partitions\n   - Time Complexity: Best/Avg O(n log n), Worst O(n²)\n   - Space Complexity: O(log n) stack space\n   - Stability: Unstable\n   - Advantages: Fast in practice, in-place, cache-friendly\n   - Disadvantages: Worst case O(n²), not stable\n   - Use Cases: General-purpose sorting, when average case matters\n\n6. **Heap Sort**\n   - Mechanism: Build max heap, repeatedly extract maximum\n   - Time Complexity: O(n log n) always\n   - Space Complexity: O(1)\n   - Stability: Unstable\n   - Advantages: In-place, guaranteed O(n log n)\n   - Disadvantages: Not cache-friendly, slower than quicksort in practice\n   - Use Cases: Memory-constrained environments, worst-case guarantees\n\n**II. Non-Comparison Based Sorting**\n\nThese can achieve linear time for specific data types:\n\n7. **Counting Sort**\n   - Mechanism: Count occurrences, calculate positions\n   - Time Complexity: O(n + k) where k is range\n   - Space Complexity: O(k)\n   - Stability: Stable\n   - Use Cases: Small integer ranges\n\n8. **Radix Sort**\n   - Mechanism: Sort by individual digits/characters\n   - Time Complexity: O(d × (n + k))\n   - Space Complexity: O(n + k)\n   - Stability: Depends on subroutine\n   - Use Cases: Integers, strings with fixed length\n\n9. **Bucket Sort**\n   - Mechanism: Distribute into buckets, sort buckets\n   - Time Complexity: Average O(n + k), Worst O(n²)\n   - Space Complexity: O(n + k)\n   - Use Cases: Uniformly distributed floating-point numbers\n\n**III. Hybrid Algorithms**\n\nModern implementations combine algorithms:\n\n10. **Timsort** (Python, Java for objects)\n    - Merge sort + Insertion sort\n    - Exploits runs in data\n    - Time: O(n log n), stable\n\n11. **Introsort** (C++ std::sort)\n    - Quick sort + Heap sort + Insertion sort\n    - Switches to heapsort if quicksort degrades\n    - Time: O(n log n) guaranteed\n\n**IV. Decision Framework**\n\n```\nData Size?\n├─ Small (< 50): Insertion Sort\n├─ Medium/Large:\n│  ├─ Need Stability?\n│  │  ├─ Yes: Merge Sort or Timsort\n│  │  └─ No: Quick Sort or Heap Sort\n│  ├─ Memory Constrained?\n│  │  └─ Yes: Heap Sort or Quick Sort\n│  ├─ Integer Data?\n│  │  └─ Small Range: Counting/Radix Sort\n│  └─ Worst Case Critical?\n│     └─ Yes: Merge Sort or Heap Sort\n```\n\n**Performance Characteristics:**\n\nAlgorithm     | Best    | Average  | Worst   | Space | Stable\n--------------|---------|----------|---------|-------|-------\nBubble Sort   | O(n)    | O(n²)    | O(n²)   | O(1)  | Yes\nInsertion Sort| O(n)    | O(n²)    | O(n²)   | O(1)  | Yes\nSelection Sort| O(n²)   | O(n²)    | O(n²)   | O(1)  | No\nMerge Sort    | O(n lgn)| O(n lgn) | O(n lgn)| O(n)  | Yes\nQuick Sort    | O(n lgn)| O(n lgn) | O(n²)   | O(lgn)| No\nHeap Sort     | O(n lgn)| O(n lgn) | O(n lgn)| O(1)  | No\nCounting Sort | O(n+k)  | O(n+k)   | O(n+k)  | O(k)  | Yes\nRadix Sort    | O(nk)   | O(nk)    | O(nk)   | O(n+k)| Yes*\n\n**Practical Recommendations:**\n- **Default choice**: Use your language's built-in sort (highly optimized)\n- **Custom implementation**: Quicksort for general use\n- **Stability required**: Merge sort\n- **Embedded systems**: Heap sort (predictable, in-place)\n- **Network data**: Insertion sort (good for streaming)\n\nThe choice ultimately depends on your specific constraints: data size, memory availability, stability requirements, and whether you have information about input distribution.",
+                tokens: 5234,
+                time: 4.2
+            }
+        };
+
+        let currentView = 'grid';
+        let carouselIndex = 0;
+        let selectedModels = [
+            models[0], // GPT-3.5 Turbo
+            models[3], // Gemini 2.5 Flash
+            models[2], // GPT-4 Turbo
+            models[4]  // Gemini 3.1 Pro Preview
+        ];
+
+        function addPanel() {
+            if (selectedModels.length >= 6) return;
+            const nextModel = models.find(m => !selectedModels.includes(m)) || models[0];
+            selectedModels.push(nextModel);
+            updatePanelButtons();
+            renderCards();
+        }
+
+        function removePanel() {
+            if (selectedModels.length <= 1) return;
+            selectedModels.pop();
+            if (carouselIndex >= selectedModels.length) {
+                carouselIndex = selectedModels.length - 1;
+            }
+            updatePanelButtons();
+            renderCards();
+        }
+
+        function updatePanelButtons() {
+            const removeBtn = document.getElementById('removeBtn');
+            const addBtn = document.getElementById('addBtn');
+            if (removeBtn) removeBtn.disabled = selectedModels.length <= 1;
+            if (addBtn) addBtn.disabled = selectedModels.length >= 6;
+        }
+
+        function handleSend() {
+            const input = document.getElementById('promptInput');
+            if (!input.value.trim() || isLoading) return;
+            
+            isLoading = true;
+            hasResponses = false;
+            renderCards();
+            
+            // Simulate API delay
+            setTimeout(() => {
+                isLoading = false;
+                hasResponses = true;
+                renderCards();
+            }, 2000);
+        }
+
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('carouselBtn').classList.toggle('active', view === 'carousel');
+            document.getElementById('gridBtn').classList.toggle('active', view === 'grid');
+            renderCards();
+        }
+
+        function renderCards() {
+            const container = document.getElementById('comparisonContainer');
+            container.className = currentView === 'carousel' ? 'comparison-grid carousel' : 'comparison-grid';
+            
+            if (currentView === 'carousel') {
+                container.innerHTML = `
+                    <div class="carousel-wrapper">
+                        <button class="carousel-nav" onclick="prevCarousel()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                        </button>
+                        <div class="carousel-card-container">
+                            ${renderCard(selectedModels[carouselIndex], carouselIndex)}
+                            <div class="carousel-indicators">
+                                ${selectedModels.map((_, i) => `
+                                    <button class="carousel-dot ${i === carouselIndex ? 'active' : ''}" onclick="goToSlide(${i})"></button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button class="carousel-nav" onclick="nextCarousel()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = selectedModels.map((model, i) => renderCard(model, i)).join('');
+            }
+        }
+
+        function renderCard(model, index) {
+            const response = demoResponses[model.id];
+            
+            return `
+                <div class="model-card">
+                    <div class="model-selector-header">
+                        <div class="model-header-top">
+                            <div class="model-header-row">
+                                <button class="model-button" onclick="toggleDropdown(${index})">
+                                    <span>${model.name}</span>
+                                    <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </button>
+                                <div class="context-badge">
+                                    <span class="context-badge-label">CTX</span>
+                                    <span class="context-badge-value">${model.context}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${renderDropdown(index, model.id)}
+                    </div>
+                    <div class="model-card-content">
+                        ${isLoading ? `
+                            <div class="loading-state">
+                                <div class="spinner"></div>
+                                <div class="loading-text">Generating response...</div>
+                                <div class="loading-subtext">${model.name}</div>
+                            </div>
+                        ` : hasResponses && response ? `
+                            <div class="response-content">
+                                <div class="response-header">
+                                    <button class="copy-button" onclick="copyResponse(${index})" id="copy-btn-${index}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                        <span id="copy-text-${index}">Copy</span>
+                                    </button>
+                                </div>
+                                <div class="response-text" id="response-text-${index}">${response.text}</div>
+                                <div class="response-stats">
+                                    <div class="stat-chip">
+                                        <span class="stat-label">Tokens:</span>
+                                        <span class="stat-value">${response.tokens}</span>
+                                    </div>
+                                    <div class="stat-chip">
+                                        <span class="stat-label">Time:</span>
+                                        <span class="stat-value">${response.time}s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="placeholder-state">
+                                <div class="placeholder-icon">💬</div>
+                                <h3 class="placeholder-title">Select a model</h3>
+                                <p class="placeholder-text">Choose an AI model from the dropdown above</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDropdown(cardIndex, currentModelId) {
+            const groupedModels = models.reduce((acc, model) => {
+                if (!acc[model.provider]) acc[model.provider] = [];
+                acc[model.provider].push(model);
+                return acc;
+            }, {});
+
+            return `
+                <div id="dropdown-${cardIndex}" class="model-dropdown">
+                    ${Object.entries(groupedModels).map(([provider, providerModels]) => `
+                        <div class="model-dropdown-group">
+                            <div class="model-dropdown-group-label">${provider}</div>
+                            ${providerModels.map(model => `
+                                <button class="model-dropdown-item ${model.id === currentModelId ? 'active' : ''}" 
+                                        onclick="selectModel(${cardIndex}, '${model.id}')">
+                                    <span class="dropdown-item-name">${model.name}</span>
+                                    <span class="dropdown-item-context">${model.context}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function toggleDropdown(index) {
+            const dropdown = document.getElementById(`dropdown-${index}`);
+            const isShown = dropdown.classList.contains('show');
+            
+            // Close all dropdowns
+            document.querySelectorAll('.model-dropdown').forEach(d => d.classList.remove('show'));
+            
+            // Toggle the clicked one
+            if (!isShown) {
+                dropdown.classList.add('show');
+            }
+        }
+
+        function selectModel(cardIndex, modelId) {
+            const model = models.find(m => m.id === modelId);
+            selectedModels[cardIndex] = model;
+            renderCards();
+        }
+
+        function prevCarousel() {
+            carouselIndex = (carouselIndex - 1 + selectedModels.length) % selectedModels.length;
+            renderCards();
+        }
+
+        function nextCarousel() {
+            carouselIndex = (carouselIndex + 1) % selectedModels.length;
+            renderCards();
+        }
+
+        function goToSlide(index) {
+            carouselIndex = index;
+            renderCards();
+        }
+
+        function copyResponse(index) {
+            const model = currentView === 'carousel' ? selectedModels[carouselIndex] : selectedModels[index];
+            const response = demoResponses[model.id];
+            
+            if (response) {
+                navigator.clipboard.writeText(response.text).then(() => {
+                    const button = document.getElementById(`copy-btn-${index}`);
+                    const text = document.getElementById(`copy-text-${index}`);
+                    
+                    button.classList.add('copied');
+                    text.textContent = 'Copied!';
+                    
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        text.textContent = 'Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy to clipboard');
+                });
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.model-selector-header')) {
+                document.querySelectorAll('.model-dropdown').forEach(d => d.classList.remove('show'));
+            }
+        });
+
+        // Auto-resize textarea
+        document.addEventListener('input', (e) => {
+            if (e.target.classList.contains('message-input')) {
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+            }
+        });
+
+        // Handle Enter key press on textarea
+        document.addEventListener('keydown', (e) => {
+            if (e.target.id === 'promptInput' && e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+        // Sidebar functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('settingsTab').classList.toggle('active', tab === 'settings');
+            document.getElementById('aboutTab').classList.toggle('active', tab === 'about');
+            renderSidebarContent();
+        }
+
+        function toggleSetting(key) {
+            sidebarSettings[key] = !sidebarSettings[key];
+            renderSidebarContent();
+        }
+
+        function renderSidebarContent() {
+            const content = document.getElementById('sidebarContent');
+            
+            if (currentTab === 'settings') {
+                content.innerHTML = `
+                    <div class="settings-section">
+                        <div class="settings-group">
+                            <h3>Display</h3>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">Dark Mode</div>
+                                    <div class="setting-description">Use dark theme</div>
+                                </div>
+                                <div class="toggle-switch ${sidebarSettings.darkMode ? 'active' : ''}" 
+                                     onclick="toggleSetting('darkMode')"></div>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">Show Response Time</div>
+                                    <div class="setting-description">Display API response times</div>
+                                </div>
+                                <div class="toggle-switch ${sidebarSettings.showResponseTime ? 'active' : ''}" 
+                                     onclick="toggleSetting('showResponseTime')"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <h3>Developer</h3>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">Debug Logging</div>
+                                    <div class="setting-description">Log API calls to console</div>
+                                </div>
+                                <div class="toggle-switch ${sidebarSettings.debugLogging ? 'active' : ''}" 
+                                     onclick="toggleSetting('debugLogging')"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="demo-notice">
+                            <strong>Demo Mode</strong><br>
+                            Settings changes are for demonstration only. In the full version, these persist and control actual behavior.
+                        </div>
+                    </div>
+                `;
+            } else if (currentTab === 'about') {
+                content.innerHTML = `
+                    <div class="settings-section">
+                        <div class="settings-group">
+                            <h3>About LLM-Hub-V2</h3>
+                            <p style="color: #9ca3af; font-size: 0.875rem; line-height: 1.6;">
+                                A powerful tool for comparing responses from multiple Large Language Models side-by-side.
+                            </p>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <h3>Features</h3>
+                            <div style="color: #9ca3af; font-size: 0.875rem; line-height: 1.8;">
+                                • Compare multiple LLMs simultaneously<br>
+                                • Grid and Carousel view modes<br>
+                                • Custom model configurations<br>
+                                • Response statistics<br>
+                                • OpenAI & Google Gemini support
+                            </div>
+                        </div>
+                        
+                        <div class="settings-group">
+                            <h3>Version</h3>
+                            <div style="color: #9ca3af; font-size: 0.875rem;">
+                                Demo v1.0.0
+                            </div>
+                        </div>
+                        
+                        <div class="demo-notice">
+                            <strong>Full Version Available</strong><br>
+                            Visit the GitHub repository to clone and run the complete application with live API integration.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        renderCards();
+        renderSidebarContent();
+        updatePanelButtons();
+
+        // Demo message in textarea
+        setTimeout(() => {
+            const textarea = document.querySelector('.message-input');
+            textarea.value = 'Explain different sorting algorithms';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }, 500);
+    </script>
+</body>
+</html>
