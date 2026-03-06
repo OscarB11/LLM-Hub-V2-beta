@@ -1,2 +1,0 @@
-# Design doc for device ecosystem web app
-
