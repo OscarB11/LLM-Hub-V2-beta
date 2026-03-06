@@ -540,7 +540,7 @@ function App() {
         </button>
 
         <div className="sidebar-header">
-          <h2>LLM Compare</h2>
+          <h2>LLM-Hub-V2-Beta</h2>
           <p>AI Model Comparison Tool</p>
         </div>
 
@@ -676,7 +676,7 @@ function App() {
             <Menu size={24} />
           </button>
           <div className="header-title">
-            <h1>AI Model Comparison</h1>
+            <h1>LLM-Hub-V2-Beta</h1>
             <p>Compare responses across different LLMs</p>
           </div>
         </div>
