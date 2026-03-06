@@ -6,9 +6,16 @@ const openai = hasApiKey ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 }) : null;
 
-export const generateOpenAIResponse = async (prompt, modelId) => {
+export const generateOpenAIResponse = async (prompt, modelId, config = {}) => {
   try {
     const startTime = Date.now();
+
+    const {
+      temperature = 0.7,
+      maxTokens = 1024,
+      topP = 1.0,
+      systemPrompt = ''
+    } = config;
     
     // Mock response for testing without API key
     if (!hasApiKey) {
@@ -22,11 +29,16 @@ export const generateOpenAIResponse = async (prompt, modelId) => {
       };
     }
     
+    const messages = [];
+    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+    messages.push({ role: 'user', content: prompt });
+
     const completion = await openai.chat.completions.create({
       model: modelId,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 1000
+      messages,
+      temperature,
+      max_tokens: maxTokens,
+      top_p: topP
     });
 
     const endTime = Date.now();

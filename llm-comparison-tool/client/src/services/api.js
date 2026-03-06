@@ -19,11 +19,13 @@ export const getAvailableModels = async () => {
   }
 };
 
-export const compareModels = async (prompt, models) => {
+export const compareModels = async (prompt, models, configs = [], debug = true) => {
   try {
     const response = await api.post('/compare', {
       prompt,
-      models
+      models,
+      configs,
+      debug
     });
     return response.data.responses;
   } catch (error) {
