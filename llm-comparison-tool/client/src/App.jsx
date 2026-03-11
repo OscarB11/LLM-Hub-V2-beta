@@ -22,6 +22,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState('settings');
   const [showModelDropdown, setShowModelDropdown] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [darkMode, setDarkMode] = useState(true);
   const [showResponseTime, setShowResponseTime] = useState(false);
@@ -396,14 +397,6 @@ function App() {
     const isLoading = loading && selectedModels[index];
     const [copied, setCopied] = useState(false);
     const buttonRef = useRef(null);
-    const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
-
-    useEffect(() => {
-      if (showModelDropdown === index && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setDropdownPos({ top: rect.bottom + 6, left: rect.left });
-      }
-    }, [showModelDropdown]);
 
     const handleCopy = () => {
       if (response?.content) {
@@ -420,7 +413,15 @@ function App() {
             <div className="model-header-row">
               <button
                 ref={buttonRef}
-                onClick={() => setShowModelDropdown(showModelDropdown === index ? null : index)}
+                onClick={() => {
+                  if (showModelDropdown === index) {
+                    setShowModelDropdown(null);
+                  } else {
+                    const rect = buttonRef.current.getBoundingClientRect();
+                    setDropdownPos({ top: rect.bottom + 6, left: rect.left });
+                    setShowModelDropdown(index);
+                  }
+                }}
                 className="model-button"
               >
                 <span className="model-name">{model ? model.name : 'Select Model'}</span>
