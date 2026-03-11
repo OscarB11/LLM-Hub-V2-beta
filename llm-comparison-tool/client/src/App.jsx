@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getAvailableModels, compareModels } from './services/api';
 import { Menu, X, MessageSquare, Send, Paperclip, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, Copy, Check } from 'lucide-react';
@@ -395,6 +395,15 @@ function App() {
     const response = responses[index];
     const isLoading = loading && selectedModels[index];
     const [copied, setCopied] = useState(false);
+    const buttonRef = useRef(null);
+    const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+
+    useEffect(() => {
+      if (showModelDropdown === index && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setDropdownPos({ top: rect.bottom + 6, left: rect.left });
+      }
+    }, [showModelDropdown]);
 
     const handleCopy = () => {
       if (response?.content) {
@@ -410,6 +419,7 @@ function App() {
           <div className="model-header-top">
             <div className="model-header-row">
               <button
+                ref={buttonRef}
                 onClick={() => setShowModelDropdown(showModelDropdown === index ? null : index)}
                 className="model-button"
               >
@@ -437,28 +447,47 @@ function App() {
             )}
           </div>
 
-          {showModelDropdown === index && (
-            <div className="model-dropdown">
+          {showModelDropdown === index && createPortal(
+            <div
+              className="model-dropdown"
+              style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left }}
+            >
               {Object.entries(groupedDropdownModels).map(([company, models]) => (
                 <div key={company} className="model-dropdown-group">
-                  <div className={`model-dropdown-group-label${company === 'Custom' ? ' custom-group-label' : ''}`}>{company}</div>
+                  {company === 'Custom' ? (
+                    <div className="custom-group-header">
+                      <span className="custom-group-icon">✦</span>
+                      <span className="custom-group-title">Custom Models</span>
+                      <span className="custom-group-line" />
+                    </div>
+                  ) : (
+                    <div className="model-dropdown-group-label">{company}</div>
+                  )}
                   {models.map(m => (
                     <button
                       key={m.id}
                       onClick={() => handleModelChange(index, m.id)}
-                      className={`model-dropdown-item ${selectedModels[index] === m.id ? 'active' : ''}${m._isCustom ? ' custom-item' : ''}`}
+                      className={`${m._isCustom ? `custom-preset-item ${selectedModels[index] === m.id ? 'active' : ''}` : `model-dropdown-item ${selectedModels[index] === m.id ? 'active' : ''}`}`}
                     >
-                      <span className="dropdown-item-name">{m.name}</span>
                       {m._isCustom ? (
-                        <span className="dropdown-item-custom-badge">custom</span>
-                      ) : m.contextWindow && (
-                        <span className="dropdown-item-context">{formatContextWindow(m.contextWindow)}</span>
+                        <>
+                          <span className="custom-preset-name">{m.name}</span>
+                          <span className="custom-preset-badge">PRESET</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="dropdown-item-name">{m.name}</span>
+                          {m.contextWindow && (
+                            <span className="dropdown-item-context">{formatContextWindow(m.contextWindow)}</span>
+                          )}
+                        </>
                       )}
                     </button>
                   ))}
                 </div>
               ))}
-            </div>
+            </div>,
+            document.body
           )}
         </div>
 
@@ -470,8 +499,21 @@ function App() {
               <p className="loading-subtext">Please wait</p>
             </div>
           ) : response && response.success ? (
-            <div className="response-content">
-              <div className="response-text">{response.content}</div>
+            <>
+              <div className="response-content">
+                <div className="response-text">{response.content}</div>
+                {response.groundingSources?.length > 0 && (
+                  <div className="grounding-sources">
+                    <div className="grounding-sources-label">🔍 Sources</div>
+                    {response.groundingSources.map((src, i) => (
+                      <a key={i} href={src.uri} target="_blank" rel="noopener noreferrer" className="grounding-source-item">
+                        <span className="grounding-source-index">{i + 1}</span>
+                        <span className="grounding-source-title">{src.title}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="response-stats">
                 {showResponseTime && response.responseTime != null && (
                   <div className="stat-chip">
@@ -498,18 +540,7 @@ function App() {
                   </div>
                 )}
               </div>
-              {response.groundingSources?.length > 0 && (
-                <div className="grounding-sources">
-                  <div className="grounding-sources-label">🔍 Sources</div>
-                  {response.groundingSources.map((src, i) => (
-                    <a key={i} href={src.uri} target="_blank" rel="noopener noreferrer" className="grounding-source-item">
-                      <span className="grounding-source-index">{i + 1}</span>
-                      <span className="grounding-source-title">{src.title}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
+            </>
           ) : response && !response.success ? (
             <div className="error-state">
               <p>❌ Error: {response.error}</p>

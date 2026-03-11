@@ -31,7 +31,9 @@ function ModelCard({ response, modelName, loading }) {
           <>
             {response.success ? (
               <>
-                <div className="response-text">{response.content}</div>
+                <div className="response-content">
+                  <div className="response-text">{response.content}</div>
+                </div>
                 <div className="response-meta">
                   {response.responseTime && (
                     <span>⏱️ {response.responseTime}ms</span>

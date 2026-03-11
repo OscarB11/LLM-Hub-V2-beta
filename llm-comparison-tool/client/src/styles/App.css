@@ -80,6 +80,8 @@ body {
   min-height: 0;
   padding: 1.5rem;
   overflow: hidden;
+  position: relative;
+  z-index: 2;
 }
 
 .comparison-grid {
@@ -190,7 +192,8 @@ body {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
+  max-height: 680px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255,255,255,0.08) inset;
   position: relative;
 }
@@ -296,18 +299,36 @@ body {
 }
 
 .model-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 0.375rem;
   background: #16192b;
   backdrop-filter: blur(16px);
   border: 1px solid #2d3348;
   border-radius: 0.75rem;
   padding: 0.375rem;
   min-width: 220px;
-  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #3d4460 transparent;
+  z-index: 105;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.model-dropdown::-webkit-scrollbar {
+  width: 5px;
+}
+
+.model-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.model-dropdown::-webkit-scrollbar-thumb {
+  background: #3d4460;
+  border-radius: 3px;
+}
+
+.model-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #4d5470;
 }
 
 .model-dropdown-group-label {
@@ -358,6 +379,15 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.model-card .response-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: 500px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .loading-state {
@@ -418,17 +448,17 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.375rem;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.75rem;
+  padding-top: 0;
+  border-top: none;
 }
 
 .stat-chip {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: rgba(8, 11, 26, 0.55);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(8, 11, 26, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 0.5rem;
   padding: 0.25rem 0.625rem;
   font-size: 0.75rem;
@@ -2074,25 +2104,81 @@ body {
   color: #f9fafb;
 }
 
-/* Custom badge in dropdown */
-.custom-group-label {
-  color: #818cf8 !important;
+/* Custom presets section in dropdown - redesigned */
+.custom-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.5rem 0.4rem;
+  margin-top: 0.125rem;
 }
 
-.dropdown-item-custom-badge {
+.custom-group-icon {
   font-size: 0.65rem;
-  font-weight: 600;
-  background: rgba(99, 102, 241, 0.15);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #818cf8;
-  padding: 0.1rem 0.4rem;
-  border-radius: 999px;
-  text-transform: lowercase;
-  letter-spacing: 0.02em;
+  color: #c084fc;
+  flex-shrink: 0;
 }
 
-.custom-item {
-  border-left: 2px solid rgba(99, 102, 241, 0.4) !important;
+.custom-group-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c084fc;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.custom-group-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(192, 132, 252, 0.5), transparent);
+}
+
+.custom-preset-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.25) 0%, rgba(109, 40, 217, 0.12) 100%);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  margin-bottom: 0.25rem;
+}
+
+.custom-preset-item:hover {
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.4) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-color: rgba(192, 132, 252, 0.55);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+}
+
+.custom-preset-item.active {
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.5) 0%, rgba(139, 92, 246, 0.3) 100%);
+  border-color: #a855f7;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
+}
+
+.custom-preset-name {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #e9d5ff;
+}
+
+.custom-preset-badge {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
 }
 
 /* Light mode */
