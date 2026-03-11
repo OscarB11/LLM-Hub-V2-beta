@@ -61,7 +61,7 @@ Open **two terminal windows**:
 
 **Terminal 1 - Start Backend Server:**
 ```bash
-cd server
+cd 'C:\Users\besto\OneDrive\Visual studio code\LLM-Hub-V2 beta\llm-comparison-tool\server'
 npm start
 ```
 
@@ -69,8 +69,9 @@ Backend runs on `http://localhost:5000`
 
 **Terminal 2 - Start Frontend:**
 ```bash
-cd client
-npm run dev
+cd "C:\Users\besto\OneDrive\Visual studio code\LLM-Hub-V2 beta\llm-comparison-tool\client"
+npm start
+
 ```
 
 Frontend runs on `http://localhost:3000`
